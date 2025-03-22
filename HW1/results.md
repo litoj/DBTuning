@@ -1,33 +1,31 @@
-## Approach _create → populate_
-
-### Summary
+## Approach postgresql_create_populate
 
 ```
-CREATE TABLE
-ALTER TABLE
-CREATE TABLE
-ALTER TABLE
-COPY 1233214
-COPY 3095201
-
-real    0m50,377s
-user    0m0,296s
-sys     0m0,150s
+real    0m29,864s
+user    0m0,204s
+sys     0m0,084s
 ```
 
-## Approach _structure → data → constraints_
-
-### Summary
+## Approach mariadb_create_populate
 
 ```
-CREATE TABLE
-CREATE TABLE
-COPY 1233214
-COPY 3095201
-ALTER TABLE
-ALTER TABLE
+real    0m25,963s
+user    0m0,348s
+sys     0m0,221s
+```
 
-real    0m9,997s
-user    0m0,288s
-sys     0m0,150s
+## Approach postgresql_defer_constraints
+
+```
+real    0m5,837s
+user    0m0,178s
+sys     0m0,116s
+```
+
+## Approach mariadb_defer_constraints
+
+```
+real    0m34,619s
+user    0m0,445s
+sys     0m0,317s
 ```
