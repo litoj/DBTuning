@@ -67,7 +67,7 @@ def generate_csv():
             ssnum = i
             name = gen_name()
             course = random.choice(courses)
-            grade = round(random.uniform(1.0, 4.0), 2)
+            grade = round(random.uniform(1.0, 5.0), 2)
             writer.writerow([ssnum, name, course, grade])
 
     print("✅ CSV files generated successfully!")

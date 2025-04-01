@@ -18,7 +18,7 @@ CREATE TABLE student (
     ssnum SERIAL,
     name VARCHAR(16) NOT NULL,
     course VARCHAR(16) NOT NULL,
-    grade NUMERIC(3,2) CHECK (grade >= 0 AND grade <= 4.0) -- Assuming a 4.0 GPA scale
+    grade NUMERIC(3,2) -- between 1.0 and 4.0
 );
 ALTER TABLE student ADD CONSTRAINT u_stud_name UNIQUE (name);
 ALTER TABLE student ADD CONSTRAINT pk_stud_ssnum PRIMARY KEY (ssnum);
