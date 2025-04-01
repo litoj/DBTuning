@@ -23,7 +23,6 @@ CREATE TABLE student (
 ALTER TABLE student ADD CONSTRAINT u_stud_name UNIQUE (name);
 ALTER TABLE student ADD CONSTRAINT pk_stud_ssnum PRIMARY KEY (ssnum);
 
--- Indexes for student
 CREATE UNIQUE INDEX student_ssnum_idx ON student(ssnum);
 CREATE UNIQUE INDEX student_name_idx ON student(name);
 
@@ -35,7 +34,6 @@ CREATE TABLE techdept (
 ALTER TABLE techdept ADD CONSTRAINT pk_emp_name PRIMARY KEY (dept);
 ALTER TABLE techdept ADD CONSTRAINT fk_td_manager FOREIGN KEY (manager) REFERENCES employee(ssnum);
 
--- Indexes for techdept
 CREATE UNIQUE INDEX techdept_dept_idx ON techdept(dept);
 CREATE INDEX techdept_manager_idx ON techdept(manager);
 CREATE INDEX techdept_location_idx ON techdept(location);
