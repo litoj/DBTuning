@@ -39,7 +39,8 @@ def generate_csv():
         writer = csv.writer(f)
         writer.writerow(["dept", "manager", "location"])
         tech_depts = [f"TechDept{i}" for i in range(10)]
-        locations = [random_string(10) for _ in range(10)]
+        locations = ["Berlin-Mitte", "Berlin-Kreuzberg", "Vienna-01", "Vienna-10", "Salzburg",
+                     "Munich", "Hamburg", "Berlin-Neukolln", "Graz", "Zurich", "Innsbruck"]
         managers = random.sample(range(1, 100000), 10)
         writer.writerows(
             [(tech_depts[i], managers[i], locations[i]) for i in range(10)]
