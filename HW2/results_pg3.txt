@@ -1,0 +1,72 @@
+Approach postgresql
+ pg_terminate_backend 
+----------------------
+(0 rows)
+
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+COPY 100000
+COPY 100000
+COPY 10
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+Running queries...
+                                                      QUERY PLAN                                                       
+-----------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=14310.82..14560.82 rows=100000 width=66) (actual time=53.274..64.178 rows=100000 loops=1)
+   Sort Key: salary DESC
+   Sort Method: external merge  Disk: 3248kB
+   ->  Seq Scan on employee  (cost=0.00..1904.00 rows=100000 width=66) (actual time=0.016..11.544 rows=100000 loops=1)
+ Planning Time: 3.747 ms
+ Execution Time: 69.563 ms
+(6 rows)
+
+CREATE INDEX
+                                                                 QUERY PLAN                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using emp_salary_desc_idx on employee  (cost=0.42..6660.42 rows=100000 width=66) (actual time=0.042..35.758 rows=100000 loops=1)
+ Planning Time: 1.310 ms
+ Execution Time: 38.426 ms
+(3 rows)
+
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Seq Scan on employee e  (cost=1.12..2155.12 rows=50000 width=50) (actual time=14.761..14.762 rows=0 loops=1)
+   Filter: (NOT (ANY ((dept)::text = ((hashed SubPlan 1).col1)::text)))
+   Rows Removed by Filter: 100000
+   SubPlan 1
+     ->  Seq Scan on techdept  (cost=0.00..1.10 rows=10 width=50) (actual time=0.015..0.016 rows=10 loops=1)
+ Planning Time: 5.706 ms
+ Execution Time: 24.206 ms
+(7 rows)
+
+                                                       QUERY PLAN                                                        
+-------------------------------------------------------------------------------------------------------------------------
+ Hash Anti Join  (cost=1.23..3123.35 rows=95000 width=50) (actual time=0.053..16.764 rows=89840 loops=1)
+   Hash Cond: ((e.dept)::text = (t.dept)::text)
+   ->  Seq Scan on employee e  (cost=0.00..1904.00 rows=100000 width=100) (actual time=0.017..7.108 rows=100000 loops=1)
+   ->  Hash  (cost=1.10..1.10 rows=10 width=50) (actual time=0.024..0.025 rows=10 loops=1)
+         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+         ->  Seq Scan on techdept t  (cost=0.00..1.10 rows=10 width=50) (actual time=0.007..0.008 rows=10 loops=1)
+ Planning Time: 5.346 ms
+ Execution Time: 19.097 ms
+(8 rows)
+
+
+real	0m0.832s
+user	0m0.165s
+sys	0m0.090s
