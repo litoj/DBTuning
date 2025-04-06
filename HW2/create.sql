@@ -1,5 +1,5 @@
 CREATE TABLE employee (
-    ssnum SERIAL,
+    ssnum INTEGER NOt NULL,
     name VARCHAR(16) NOT NULL,
     manager INTEGER, -- Self-referencing to another employee
     dept VARCHAR(16),
@@ -15,7 +15,7 @@ CREATE UNIQUE INDEX employee_name_idx ON employee(name);
 CREATE INDEX employee_dept_idx ON employee(dept);
 
 CREATE TABLE student (
-    ssnum SERIAL,
+    ssnum INTEGER NOT NULL,
     name VARCHAR(16) NOT NULL,
     course VARCHAR(16) NOT NULL,
     grade NUMERIC(3,2) -- between 1.0 and 4.0
@@ -27,12 +27,13 @@ CREATE UNIQUE INDEX student_ssnum_idx ON student(ssnum);
 CREATE UNIQUE INDEX student_name_idx ON student(name);
 
 CREATE TABLE techdept (
-    dept VARCHAR(16),
+    dept VARCHAR(16) NOT NULL,
     manager INTEGER NOT NULL,
     location VARCHAR(16) NOT NULL
 );
-ALTER TABLE techdept ADD CONSTRAINT pk_emp_name PRIMARY KEY (dept);
+ALTER TABLE techdept ADD CONSTRAINT pk_td_name PRIMARY KEY (dept);
 ALTER TABLE techdept ADD CONSTRAINT fk_td_manager FOREIGN KEY (manager) REFERENCES employee(ssnum);
+ALTER TABLE employee ADD CONSTRAINT fk_emp_dept FOREIGN KEY (dept) REFERENCES techdept(dept);
 
 CREATE UNIQUE INDEX techdept_dept_idx ON techdept(dept);
 CREATE INDEX techdept_manager_idx ON techdept(manager);

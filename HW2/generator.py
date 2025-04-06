@@ -35,14 +35,27 @@ def gen_name():
 
 def generate_csv():
     # Generate Tech Departments CSV
+    deptCount = 10
+    tech_depts = [f"TechDept{i}" for i in range(1, deptCount + 1)]
     with open("techdept.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["dept", "manager", "location"])
-        tech_depts = [f"TechDept{i}" for i in range(10)]
-        locations = [random_string(10) for _ in range(10)]
+        locations = [
+            "Berlin-Mitte",
+            "Berlin-Kreuzberg",
+            "Vienna-01",
+            "Vienna-10",
+            "Salzburg",
+            "Munich",
+            "Hamburg",
+            "Berlin-Neukolln",
+            "Graz",
+            "Zurich",
+            "Innsbruck",
+        ]
         managers = random.sample(range(1, 100000), 10)
         writer.writerows(
-            [(tech_depts[i], managers[i], locations[i]) for i in range(10)]
+            [(tech_depts[i], managers[i], locations[i]) for i in range(deptCount)]
         )
 
     # Generate Employees CSV
@@ -52,7 +65,7 @@ def generate_csv():
         for i in tqdm(range(1, 100001), desc="Generating Employees"):
             ssnum = i
             name = gen_name()
-            manager = random.randint(1, i) if i > 1 else None
+            manager = random.randint(1, i - 1) if i > 1 else None
             dept = random.choice(tech_depts) if random.random() < 0.1 else None
             salary = round(random.uniform(30000, 150000), 2)
             numfriends = random.randint(0, 50)
