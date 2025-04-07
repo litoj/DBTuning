@@ -1,11 +1,13 @@
 #!/bin/bash
 
+DATABASE=${DATABASE:-trdb}
+
 pg() {
-	psql -d trdb ${1+-c "$@"} || exit 1
+	psql -d $DATABASE ${1+-c "$@"} || exit 1
 }
 
 md() {
-	mariadb -t trdb ${1+-e "$@"} || exit 1
+	mariadb -t $DATABASE ${1+-e "$@"} || exit 1
 }
 
 structure=$(sed '/ALTER/d;/CREATE.*INDEX/d' create.sql)
@@ -15,9 +17,10 @@ cleanup() {
 	echo "Cleanup and prep of $1" >&2
 	case $1 in
 		p*)
-			psql -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'trdb' AND pid <> pg_backend_pid();"
-			dropdb trdb
-			createdb trdb
+			psql -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+				WHERE datname = '$DATABASE' AND pid <> pg_backend_pid();"
+			dropdb $DATABASE
+			createdb $DATABASE
 			pg "$structure"
 
 			psql_copy_template="\\copy name FROM 'name.csv' DELIMITER ',' CSV HEADER"
@@ -28,14 +31,18 @@ cleanup() {
 			pg "$constraints"
 			;;
 		m*)
-			mariadb -e 'DROP DATABASE IF EXISTS trdb; CREATE DATABASE trdb;'
+			mariadb -e "DROP DATABASE IF EXISTS $DATABASE; CREATE DATABASE $DATABASE;"
 			md "$structure"
-			md "$constraints"
 
-			maria_copy_template="LOAD DATA LOCAL INFILE '$PWD/name.csv' INTO TABLE name FIELDS TERMINATED BY ','"
+			maria_copy_template="LOAD DATA LOCAL INFILE '$PWD/name.csv' INTO TABLE name FIELDS TERMINATED BY ',' IGNORE 1 LINES"
 			for f in *.csv; do
 				md "${maria_copy_template//name/${f%.csv}}"
 			done
+			# mariadb loads empty fields as default type value instead of default column value (NULL)
+			md "UPDATE employee SET manager=NULL WHERE manager=0"
+			md "UPDATE employee SET dept=NULL WHERE dept=''"
+
+			md "$constraints"
 			;;
 	esac
 	echo "Prep of $1 done" >&2
@@ -47,7 +54,7 @@ qPerf1=$(sed -n '/-- QUERY 1 REWRITTEN/,/^$/ p' "$TEST")
 qOrig2=$(sed -n '/-- QUERY 2 ORIGINAL/,/^$/ p' "$TEST")
 qPerf2=$(sed -n '/-- QUERY 2 REWRITTEN/,$ p' "$TEST")
 
-queries=(
+[[ $QUERIES ]] || QUERIES=(
 	"$qOrig1"
 	"$qPerf1"
 	"$qOrig2"
@@ -58,12 +65,12 @@ run_test() {
 	echo "# Test of $1"
 	[[ $NO_CLEAN ]] || cleanup "$1"
 	echo "**Running queries...**"
-	for q in "${queries[@]}"; do
+	for q in "${QUERIES[@]}"; do
 		printf '\n```sql\n%s\n```\n' "$q"
 		if [[ $1 == maria* ]]; then
-			md "ANALYZE $q"
+			time md "EXPLAIN $q"
 		else
-			pg "EXPLAIN ANALYZE $q"
+			time pg "EXPLAIN ANALYZE $q"
 		fi
 	done
 }
