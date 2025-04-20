@@ -1,0 +1,7 @@
+EXPLAIN ANALYZE SELECT name FROM employee
+	WHERE dept IS NULL AND salary > 149000 OR dept IS NOT NULL AND salary > 149000;
+EXPLAIN ANALYZE SELECT name FROM employee WHERE salary > 149000;
+
+EXPLAIN ANALYZE SELECT name FROM employee
+	WHERE dept IS NULL AND salary > 6000 OR dept IS NOT NULL AND salary > 6000;
+EXPLAIN ANALYZE SELECT name FROM employee WHERE salary > 60000;
