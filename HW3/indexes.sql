@@ -4,5 +4,5 @@ CLUSTER employee USING idx_ssnum;
 CREATE INDEX idx_name ON employee(name);
 CLUSTER employee USING idx_name;
 
-CREATE INDEX idx_dept_salary ON employee (dept, salary); -- USING HASH (dept, salary);
+CREATE INDEX idx_dept_salary ON employee (dept, salary);
 
