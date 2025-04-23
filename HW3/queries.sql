@@ -22,3 +22,17 @@ DROP INDEX idx_dept_salary; -- performance degradation with higher #results is l
 EXPLAIN ANALYZE SELECT name FROM employee WHERE dept IS NULL AND salary > 50000;
 CREATE INDEX idx_dept_salary ON employee (dept, salary);
 EXPLAIN ANALYZE SELECT name FROM employee WHERE dept IS NULL AND salary > 50000;
+
+
+-- (drop and recreate idx_name to avoid duplicate error)
+DROP INDEX IF EXISTS idx_name;
+CREATE INDEX idx_name ON employee(name);
+-- recreate ssnum index before re-clustering
+CREATE INDEX IF NOT EXISTS idx_ssnum ON employee(ssnum);
+
+-- clustering on non-key attribute (name)
+CREATE INDEX idx_name ON employee(name);
+CLUSTER employee USING idx_name;
+
+-- performance of LIKE prefix scan after clustering
+EXPLAIN ANALYZE SELECT * FROM employee WHERE name LIKE 'A%';
