@@ -37,7 +37,7 @@ run_test() {
 
 	for q in "${TESTS[@]}"; do
 		q=${q%;*}
-		printf '\n```sql%s\n```\n' "${q##*;}"
+		printf '\n%s\n\n```sql%s\n```\n' "$(echo "$q" | sed -n 's/^--/##/p')" "${q##*;}"
 		pg "EXPLAIN ANALYZE ${q##*;}" | tail -n +3
 
 		declare -i i=${SAMPLE:=100}+1
