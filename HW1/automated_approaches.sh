@@ -3,8 +3,8 @@
 cleanup() {
 	case $1 in
 		postgresql_*)
-			dropdb dblp
-			createdb dblp
+			dropdb trdb
+			createdb trdb
 			;;
 		mariadb_*)
 			mariadb -e 'drop database if exists trdb; create database trdb'
@@ -41,16 +41,16 @@ maria_copy_publ="LOAD DATA LOCAL INFILE '$PWD/publ.tsv' INTO TABLE Publ FIELDS T
 maria_copy_auth="LOAD DATA LOCAL INFILE '$PWD/auth.tsv' INTO TABLE Auth FIELDS TERMINATED BY '\t'"
 
 postgresql_create_populate() {
-	psql -d dblp -f 'create.sql'
-	psql -d dblp -c "$sql_copy_publ"
-	psql -d dblp -c "$sql_copy_auth"
+	psql -d trdb -f 'create.sql'
+	psql -d trdb -c "$sql_copy_publ"
+	psql -d trdb -c "$sql_copy_auth"
 }
 
 postgresql_defer_constraints() {
-	psql -d dblp -c "$structure"
-	psql -d dblp -c "$sql_copy_publ"
-	psql -d dblp -c "$sql_copy_auth"
-	psql -d dblp -c "$constraints"
+	psql -d trdb -c "$structure"
+	psql -d trdb -c "$sql_copy_publ"
+	psql -d trdb -c "$sql_copy_auth"
+	psql -d trdb -c "$constraints"
 }
 
 mariadb_create_populate() {
@@ -66,7 +66,7 @@ mariadb_defer_constraints() {
 	mariadb -D trdb -e "$constraints"
 }
 
-run_test postgresql_create_populate
-run_test mariadb_create_populate
+# run_test postgresql_create_populate
+# run_test mariadb_create_populate
 run_test postgresql_defer_constraints
-run_test mariadb_defer_constraints
+# run_test mariadb_defer_constraints
