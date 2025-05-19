@@ -7,30 +7,26 @@
 ```sql
 SELECT * FROM Publ WHERE pubID = 'conf/aaai/Val99'
 ```
- Index Scan using idx_publ on publ  (cost=0.43..8.45 rows=1 width=130) (actual time=0.028..0.028 rows=1 loops=1)
+ Index Scan using idx_publ on publ  (cost=0.43..8.45 rows=1 width=129) (actual time=0.037..0.037 rows=1 loops=1)
    Index Cond: ((pubid)::text = 'conf/aaai/Val99'::text)
- Planning Time: 0.303 ms
- Execution Time: 0.057 ms
+ Planning Time: 0.392 ms
+ Execution Time: 0.063 ms
 (4 rows)
 
-**100 runs, 6 ms/run → 152 runs/s**
+**1000 runs, 0.1 ms/run → 7170 runs/s**
 
 ## Multipoint low selectivity
 
 ```sql
 SELECT * FROM Publ WHERE booktitle = 'TWOMD'
 ```
- Gather  (cost=1000.00..29502.69 rows=177 width=130) (actual time=25.896..41.616 rows=8 loops=1)
-   Workers Planned: 2
-   Workers Launched: 2
-   ->  Parallel Seq Scan on publ  (cost=0.00..28484.99 rows=74 width=130) (actual time=33.104..37.988 rows=3 loops=3)
-         Filter: ((booktitle)::text = 'TWOMD'::text)
-         Rows Removed by Filter: 411069
- Planning Time: 0.637 ms
- Execution Time: 41.673 ms
-(8 rows)
+ Index Scan using idx_publ on publ  (cost=0.43..14.44 rows=172 width=131) (actual time=0.028..0.029 rows=8 loops=1)
+   Index Cond: ((booktitle)::text = 'TWOMD'::text)
+ Planning Time: 0.399 ms
+ Execution Time: 0.058 ms
+(4 rows)
 
-**100 runs, 9 ms/run → 108 runs/s**
+**1000 runs, 0.1 ms/run → 7649 runs/s**
 
 ## Multipoint low selectivity using IN
 
@@ -40,27 +36,26 @@ SELECT * FROM Publ WHERE pubID IN (
 'conf/icra/KobayashiH04',
 'conf/coling/KerpedjievN90')
 ```
- Index Scan using idx_publ on publ  (cost=0.43..18.17 rows=3 width=130) (actual time=0.075..0.169 rows=3 loops=1)
+ Index Scan using idx_publ on publ  (cost=0.43..17.34 rows=3 width=128) (actual time=0.029..0.063 rows=3 loops=1)
    Index Cond: ((pubid)::text = ANY ('{journals/tcs/EsikK04,conf/icra/KobayashiH04,conf/coling/KerpedjievN90}'::text[]))
- Planning Time: 0.973 ms
- Execution Time: 0.198 ms
+ Planning Time: 0.375 ms
+ Execution Time: 0.073 ms
 (4 rows)
 
-**100 runs, 10 ms/run → 95 runs/s**
+**1000 runs, 0.1 ms/run → 6505 runs/s**
 
 ## Multipoint high selectivity
 
 ```sql
-SELECT * FROM Publ WHERE year = 2007
+SELECT * FROM Publ WHERE year = '2007'
 ```
- Seq Scan on publ  (cost=0.00..37477.18 rows=121595 width=130) (actual time=1.180..95.471 rows=123190 loops=1)
-   Filter: (year = 2007)
-   Rows Removed by Filter: 1110024
- Planning Time: 1.355 ms
- Execution Time: 99.800 ms
-(5 rows)
+ Index Scan using idx_publ on publ  (cost=0.43..4829.34 rows=123938 width=129) (actual time=0.030..23.886 rows=123190 loops=1)
+   Index Cond: ((year)::text = '2007'::text)
+ Planning Time: 0.328 ms
+ Execution Time: 29.480 ms
+(4 rows)
 
-**100 runs, 8 ms/run → 120 runs/s**
+**1000 runs, 0.1 ms/run → 6698 runs/s**
 
 
 # Test of B+-tree idx
@@ -70,30 +65,29 @@ SELECT * FROM Publ WHERE year = 2007
 ```sql
 SELECT * FROM Publ WHERE pubID = 'conf/aaai/Val99'
 ```
- Index Scan using idx_publ on publ  (cost=0.43..8.45 rows=1 width=130) (actual time=0.031..0.032 rows=1 loops=1)
+ Index Scan using idx_publ on publ  (cost=0.43..8.45 rows=1 width=130) (actual time=0.030..0.030 rows=1 loops=1)
    Index Cond: ((pubid)::text = 'conf/aaai/Val99'::text)
- Planning Time: 0.440 ms
- Execution Time: 0.060 ms
+ Planning Time: 0.326 ms
+ Execution Time: 0.051 ms
 (4 rows)
 
-**100 runs, 11 ms/run → 88 runs/s**
+**1000 runs, 0.1 ms/run → 7353 runs/s**
 
 ## Multipoint low selectivity
 
 ```sql
 SELECT * FROM Publ WHERE booktitle = 'TWOMD'
 ```
- Gather  (cost=1000.00..29502.69 rows=177 width=130) (actual time=34.917..55.019 rows=8 loops=1)
-   Workers Planned: 2
-   Workers Launched: 2
-   ->  Parallel Seq Scan on publ  (cost=0.00..28484.99 rows=74 width=130) (actual time=43.381..49.681 rows=3 loops=3)
-         Filter: ((booktitle)::text = 'TWOMD'::text)
-         Rows Removed by Filter: 411069
- Planning Time: 0.889 ms
- Execution Time: 55.093 ms
-(8 rows)
+ Bitmap Heap Scan on publ  (cost=5.81..675.84 rows=179 width=129) (actual time=0.026..0.054 rows=8 loops=1)
+   Recheck Cond: ((booktitle)::text = 'TWOMD'::text)
+   Heap Blocks: exact=8
+   ->  Bitmap Index Scan on idx_publ  (cost=0.00..5.77 rows=179 width=0) (actual time=0.018..0.018 rows=8 loops=1)
+         Index Cond: ((booktitle)::text = 'TWOMD'::text)
+ Planning Time: 0.297 ms
+ Execution Time: 0.079 ms
+(7 rows)
 
-**100 runs, 11 ms/run → 86 runs/s**
+**1000 runs, 0.1 ms/run → 6930 runs/s**
 
 ## Multipoint low selectivity using IN
 
@@ -103,27 +97,29 @@ SELECT * FROM Publ WHERE pubID IN (
 'conf/icra/KobayashiH04',
 'conf/coling/KerpedjievN90')
 ```
- Index Scan using idx_publ on publ  (cost=0.43..18.17 rows=3 width=130) (actual time=0.242..0.388 rows=3 loops=1)
+ Index Scan using idx_publ on publ  (cost=0.43..25.33 rows=3 width=129) (actual time=0.030..0.067 rows=3 loops=1)
    Index Cond: ((pubid)::text = ANY ('{journals/tcs/EsikK04,conf/icra/KobayashiH04,conf/coling/KerpedjievN90}'::text[]))
- Planning Time: 1.504 ms
- Execution Time: 0.429 ms
+ Planning Time: 0.470 ms
+ Execution Time: 0.080 ms
 (4 rows)
 
-**100 runs, 12 ms/run → 78 runs/s**
+**1000 runs, 0.1 ms/run → 7599 runs/s**
 
 ## Multipoint high selectivity
 
 ```sql
-SELECT * FROM Publ WHERE year = 2007
+SELECT * FROM Publ WHERE year = '2007'
 ```
- Seq Scan on publ  (cost=0.00..37477.18 rows=121595 width=130) (actual time=0.608..95.114 rows=123190 loops=1)
-   Filter: (year = 2007)
-   Rows Removed by Filter: 1110024
- Planning Time: 0.633 ms
- Execution Time: 99.391 ms
-(5 rows)
+ Bitmap Heap Scan on publ  (cost=1336.45..25043.26 rows=119745 width=129) (actual time=6.225..85.458 rows=123190 loops=1)
+   Recheck Cond: ((year)::text = '2007'::text)
+   Heap Blocks: exact=21749
+   ->  Bitmap Index Scan on idx_publ  (cost=0.00..1306.52 rows=119745 width=0) (actual time=3.743..3.744 rows=123190 loops=1)
+         Index Cond: ((year)::text = '2007'::text)
+ Planning Time: 0.341 ms
+ Execution Time: 88.973 ms
+(7 rows)
 
-**100 runs, 11 ms/run → 87 runs/s**
+**1000 runs, 0.1 ms/run → 6362 runs/s**
 
 
 # Test of hash idx
@@ -133,30 +129,29 @@ SELECT * FROM Publ WHERE year = 2007
 ```sql
 SELECT * FROM Publ WHERE pubID = 'conf/aaai/Val99'
 ```
- Index Scan using idx_publ on publ  (cost=0.00..8.02 rows=1 width=130) (actual time=0.019..0.020 rows=1 loops=1)
+ Index Scan using idx_publ on publ  (cost=0.00..8.02 rows=1 width=130) (actual time=0.028..0.029 rows=1 loops=1)
    Index Cond: ((pubid)::text = 'conf/aaai/Val99'::text)
- Planning Time: 0.450 ms
- Execution Time: 0.051 ms
+ Planning Time: 0.431 ms
+ Execution Time: 0.056 ms
 (4 rows)
 
-**100 runs, 10 ms/run → 99 runs/s**
+**1000 runs, 0.1 ms/run → 6082 runs/s**
 
 ## Multipoint low selectivity
 
 ```sql
 SELECT * FROM Publ WHERE booktitle = 'TWOMD'
 ```
- Gather  (cost=1000.00..29502.69 rows=177 width=130) (actual time=50.200..51.175 rows=8 loops=1)
-   Workers Planned: 2
-   Workers Launched: 2
-   ->  Parallel Seq Scan on publ  (cost=0.00..28484.99 rows=74 width=130) (actual time=40.330..46.061 rows=3 loops=3)
-         Filter: ((booktitle)::text = 'TWOMD'::text)
-         Rows Removed by Filter: 411069
- Planning Time: 1.029 ms
- Execution Time: 51.256 ms
-(8 rows)
+ Bitmap Heap Scan on publ  (cost=5.37..668.18 rows=177 width=130) (actual time=0.025..0.075 rows=8 loops=1)
+   Recheck Cond: ((booktitle)::text = 'TWOMD'::text)
+   Heap Blocks: exact=8
+   ->  Bitmap Index Scan on idx_publ  (cost=0.00..5.33 rows=177 width=0) (actual time=0.015..0.015 rows=8 loops=1)
+         Index Cond: ((booktitle)::text = 'TWOMD'::text)
+ Planning Time: 0.313 ms
+ Execution Time: 0.103 ms
+(7 rows)
 
-**100 runs, 9 ms/run → 105 runs/s**
+**1000 runs, 0.1 ms/run → 5733 runs/s**
 
 ## Multipoint low selectivity using IN
 
@@ -166,27 +161,32 @@ SELECT * FROM Publ WHERE pubID IN (
 'conf/icra/KobayashiH04',
 'conf/coling/KerpedjievN90')
 ```
- Index Scan using pk_publ on publ  (cost=0.43..18.17 rows=3 width=130) (actual time=0.084..0.155 rows=3 loops=1)
-   Index Cond: ((pubid)::text = ANY ('{journals/tcs/EsikK04,conf/icra/KobayashiH04,conf/coling/KerpedjievN90}'::text[]))
- Planning Time: 0.967 ms
- Execution Time: 0.181 ms
-(4 rows)
+ Bitmap Heap Scan on publ  (cost=12.02..23.96 rows=3 width=129) (actual time=0.039..0.054 rows=3 loops=1)
+   Recheck Cond: ((pubid)::text = ANY ('{journals/tcs/EsikK04,conf/icra/KobayashiH04,conf/coling/KerpedjievN90}'::text[]))
+   Heap Blocks: exact=3
+   ->  Bitmap Index Scan on idx_publ  (cost=0.00..12.02 rows=3 width=0) (actual time=0.024..0.024 rows=3 loops=1)
+         Index Cond: ((pubid)::text = ANY ('{journals/tcs/EsikK04,conf/icra/KobayashiH04,conf/coling/KerpedjievN90}'::text[]))
+ Planning Time: 0.509 ms
+ Execution Time: 0.072 ms
+(7 rows)
 
-**100 runs, 13 ms/run → 76 runs/s**
+**1000 runs, 0.1 ms/run → 7458 runs/s**
 
 ## Multipoint high selectivity
 
 ```sql
-SELECT * FROM Publ WHERE year = 2007
+SELECT * FROM Publ WHERE year = '2007'
 ```
- Seq Scan on publ  (cost=0.00..37477.18 rows=121595 width=130) (actual time=0.824..128.093 rows=123190 loops=1)
-   Filter: (year = 2007)
-   Rows Removed by Filter: 1110024
- Planning Time: 0.937 ms
- Execution Time: 133.716 ms
-(5 rows)
+ Bitmap Heap Scan on publ  (cost=3875.00..27664.02 rows=126322 width=130) (actual time=6.983..73.701 rows=123190 loops=1)
+   Recheck Cond: ((year)::text = '2007'::text)
+   Heap Blocks: exact=21749
+   ->  Bitmap Index Scan on idx_publ  (cost=0.00..3843.41 rows=126322 width=0) (actual time=4.510..4.510 rows=123190 loops=1)
+         Index Cond: ((year)::text = '2007'::text)
+ Planning Time: 0.392 ms
+ Execution Time: 77.206 ms
+(7 rows)
 
-**100 runs, 11 ms/run → 86 runs/s**
+**1000 runs, 0.1 ms/run → 6081 runs/s**
 
 
 # Test of no idx
@@ -196,30 +196,30 @@ SELECT * FROM Publ WHERE year = 2007
 ```sql
 SELECT * FROM Publ WHERE pubID = 'conf/aaai/Val99'
 ```
- Index Scan using pk_publ on publ  (cost=0.43..8.45 rows=1 width=130) (actual time=0.129..0.131 rows=1 loops=1)
+ Index Scan using pk_publ on publ  (cost=0.43..8.45 rows=1 width=131) (actual time=0.034..0.034 rows=1 loops=1)
    Index Cond: ((pubid)::text = 'conf/aaai/Val99'::text)
- Planning Time: 1.063 ms
- Execution Time: 0.291 ms
+ Planning Time: 0.301 ms
+ Execution Time: 0.059 ms
 (4 rows)
 
-**100 runs, 10 ms/run → 92 runs/s**
+**1000 runs, 0.1 ms/run → 5728 runs/s**
 
 ## Multipoint low selectivity
 
 ```sql
 SELECT * FROM Publ WHERE booktitle = 'TWOMD'
 ```
- Gather  (cost=1000.00..29502.69 rows=177 width=130) (actual time=44.461..45.916 rows=8 loops=1)
+ Gather  (cost=1000.00..29650.19 rows=172 width=131) (actual time=17.829..50.503 rows=8 loops=1)
    Workers Planned: 2
    Workers Launched: 2
-   ->  Parallel Seq Scan on publ  (cost=0.00..28484.99 rows=74 width=130) (actual time=35.396..40.697 rows=3 loops=3)
+   ->  Parallel Seq Scan on publ  (cost=0.00..28632.99 rows=72 width=131) (actual time=33.038..46.564 rows=3 loops=3)
          Filter: ((booktitle)::text = 'TWOMD'::text)
          Rows Removed by Filter: 411069
- Planning Time: 0.890 ms
- Execution Time: 46.003 ms
+ Planning Time: 0.411 ms
+ Execution Time: 50.543 ms
 (8 rows)
 
-**100 runs, 10 ms/run → 96 runs/s**
+**1000 runs, 0.1 ms/run → 5944 runs/s**
 
 ## Multipoint low selectivity using IN
 
@@ -229,24 +229,24 @@ SELECT * FROM Publ WHERE pubID IN (
 'conf/icra/KobayashiH04',
 'conf/coling/KerpedjievN90')
 ```
- Index Scan using pk_publ on publ  (cost=0.43..18.17 rows=3 width=130) (actual time=0.084..0.180 rows=3 loops=1)
+ Index Scan using pk_publ on publ  (cost=0.43..25.33 rows=3 width=129) (actual time=0.032..0.071 rows=3 loops=1)
    Index Cond: ((pubid)::text = ANY ('{journals/tcs/EsikK04,conf/icra/KobayashiH04,conf/coling/KerpedjievN90}'::text[]))
- Planning Time: 1.703 ms
- Execution Time: 0.234 ms
+ Planning Time: 0.418 ms
+ Execution Time: 0.085 ms
 (4 rows)
 
-**100 runs, 12 ms/run → 81 runs/s**
+**1000 runs, 0.1 ms/run → 7227 runs/s**
 
 ## Multipoint high selectivity
 
 ```sql
-SELECT * FROM Publ WHERE year = 2007
+SELECT * FROM Publ WHERE year = '2007'
 ```
- Seq Scan on publ  (cost=0.00..37477.18 rows=121595 width=130) (actual time=0.885..111.017 rows=123190 loops=1)
-   Filter: (year = 2007)
+ Seq Scan on publ  (cost=0.00..37625.18 rows=124925 width=128) (actual time=0.019..122.180 rows=123190 loops=1)
+   Filter: ((year)::text = '2007'::text)
    Rows Removed by Filter: 1110024
- Planning Time: 0.875 ms
- Execution Time: 115.943 ms
+ Planning Time: 0.369 ms
+ Execution Time: 126.232 ms
 (5 rows)
 
-**100 runs, 11 ms/run → 83 runs/s**
+**1000 runs, 0.1 ms/run → 6938 runs/s**

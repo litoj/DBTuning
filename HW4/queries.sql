@@ -56,8 +56,8 @@ SELECT * FROM Publ WHERE pubID IN (
 'conf/coling/KerpedjievN90');
 
 -- Multipoint high selectivity
-SELECT * FROM Publ WHERE year = 2008; -- 118113 results
-SELECT * FROM Publ WHERE year = 2006; -- 117705 results
-SELECT * FROM Publ WHERE year = 2005; -- 108435 results
-SELECT * FROM Publ WHERE year = 2004; --  91059 results
-SELECT * FROM Publ WHERE year = 2007; -- 123190 results
+SELECT * FROM Publ WHERE year = '2008'; -- 118113 results
+SELECT * FROM Publ WHERE year = '2006'; -- 117705 results
+SELECT * FROM Publ WHERE year = '2005'; -- 108435 results
+SELECT * FROM Publ WHERE year = '2004'; --  91059 results
+SELECT * FROM Publ WHERE year = '2007'; -- 123190 results
