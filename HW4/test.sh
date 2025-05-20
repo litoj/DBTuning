@@ -28,7 +28,8 @@ done <"$SRC"
 mapfile IDXS <idxs.sql
 
 measure() {
-	bc <<<"$(LANG=C pg "\timing on" -c "$@" | sed -n 's/^Time: \(.*\) ms/\1/p')*1000" | cut -d. -f1
+	LANG=C pg "EXPLAIN ANALYZE $1" | sed -n 's/.* Time: \(.*\) ms/\1/p' | awk 'BEGIN{x=0};{x+=$1};END{print x*1000}'
+	# bc <<<"$(LANG=C pg "\timing on" -c "$@" | sed -n 's/^Time: \(.*\) ms/\1/p')*1000" | cut -d. -f1
 }
 
 run_test() {
@@ -48,9 +49,14 @@ run_test() {
 
 		printf '\n%s\n\n```sql%s\n```\n' "$(echo "$q" | sed -n 's/^--/##/p')" "${q##*;}"
 		pg "EXPLAIN ANALYZE ${q##*;}" | tail -n +3
+		q="$(echo "$q" | sed '/^--.*/d')"
 
 		declare -i i=$SAMPLE+1 total=0
-		IFS=';' read -ra queries <<<"$q"
+		queries=()
+		while [[ $q == *';'* ]]; do
+			queries+=("${q/;*/}")
+			q=${q#*;}
+		done
 
 		while ((--i)); do
 			((total += $(measure "${queries[i % ${#queries[@]}]}")))
