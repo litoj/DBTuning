@@ -53,7 +53,7 @@ run_test() {
 		IFS=';' read -ra queries <<<"$q"
 
 		while ((--i)); do
-			((total += $(measure "${queries[RANDOM % ${#queries[@]}]}")))
+			((total += $(measure "${queries[i % ${#queries[@]}]}")))
 		done
 
 		((perRun = total / SAMPLE)) # µs
@@ -65,6 +65,7 @@ run_test() {
 if [[ $1 ]]; then
 	"$@"
 else
+	SAMPLE=${SAMPLE:-100}
 	run_test 'clustering B+-tree' "${IDXS[0]}"
 	run_test 'B+-tree' "${IDXS[1]}"
 	run_test 'hash' "${IDXS[2]}"

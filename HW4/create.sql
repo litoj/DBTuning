@@ -7,4 +7,3 @@ CREATE TABLE Publ (
 	publisher VARCHAR(196)
 );
 \copy publ FROM '../HW1/publ.tsv' delimiter E'\t' csv NULL AS '';
-ALTER TABLE Publ ADD CONSTRAINT pk_publ PRIMARY KEY (pubID);
