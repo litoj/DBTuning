@@ -9,11 +9,13 @@ pg() {
 }
 
 cleanup() {
-	echo "Cleanup and prep started" >&2
-	dropdb $DATABASE
-	createdb $DATABASE
-	psql -d $DATABASE -f create.sql
-	echo "Prep done" >&2
+	{
+		echo "Cleanup and prep started"
+		dropdb $DATABASE
+		createdb $DATABASE
+		psql -d $DATABASE -f create.sql
+		echo "Prep done"
+	} >&2
 }
 
 SRC=${SRC:-queries.sql}
@@ -35,7 +37,7 @@ mapfile STRATEGIES <./strategizer.sql
 
 run_test() {
 	for q in "${QUERIES[@]}"; do
-		echo "$q" | sed -n 's/^--/\n####/p'
+		echo "$q" | sed -n 's/^--/####/p'
 		q="$(echo "$q" | sed '1d')"
 
 		LANG=C pg "EXPLAIN ANALYZE $q" | tail -n +3 | head -n -2
@@ -47,7 +49,8 @@ run_test() {
 
 		((perRun = total / SAMPLE)) # µs
 		((perS = SAMPLE * 1000000 / total))
-		echo "**$SAMPLE runs, $((perRun / 1000)).$(((perRun % 1000) / 100)) ms/run**"
+		echo "**$SAMPLE runs, $((perRun / 1000)).$(((perRun % 1000) / 100)) ms/run**
+"
 	done
 }
 
