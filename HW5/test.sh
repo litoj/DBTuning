@@ -60,7 +60,7 @@ else
 
 	for strat in "${STRATEGIES[@]}"; do
 		echo "## ${strat##*-- }"
-		pg "$strat" >/dev/null
+		pg "${strat//SET/ALTER DATABASE $DATABASE SET}" >/dev/null || exit 1
 		strat=${strat#*-- }
 
 		for i in ${strat%--*}; do # use indexes selected in the strategy comments as a list of numbers
@@ -68,7 +68,7 @@ else
 			pg "DROP INDEX IF EXISTS idx_publ; DROP INDEX IF EXISTS idx_auth;" &>/dev/null
 			echo "### ${idx##*-- }"
 			[[ $strat == 'SET enable_hashjoin TO true'* ]] && idx=${idx//btree/hash}
-			pg "RESET ALL; ${idx%;*}; ANALYZE publ; ANALYZE auth;" >/dev/null
+			pg "RESET ALL; ${idx%;*}; ANALYZE publ; ANALYZE auth;" >/dev/null || exit 1
 
 			run_test
 		done
