@@ -3,7 +3,7 @@
 DATABASE=${DATABASE:-trdb}
 
 pg() {
-	psql -d $DATABASE -c "$1" || exit 1
+	psql -d $DATABASE -c "$@" || exit 1
 }
 
 cleanup() {
@@ -27,36 +27,51 @@ done <"$SRC"
 
 mapfile IDXS <idxs.sql
 
+measure() {
+	LANG=C pg "EXPLAIN ANALYZE $1" | sed -n 's/.* Time: \(.*\) ms/\1/p' | awk 'BEGIN{x=0};{x+=$1};END{print x*1000}'
+	# bc <<<"$(LANG=C pg "\timing on" -c "$@" | sed -n 's/^Time: \(.*\) ms/\1/p')*1000" | cut -d. -f1
+}
+
 run_test() {
 	[[ $CLEAN ]] && cleanup
 	echo "
 
 # Test of $1 idx"
-	psql -d $DATABASE -c "DROP INDEX IF EXISTS idx_publ;" &>/dev/null
-	pg "$2" >/dev/null
 
 	for q in "${TESTS[@]}"; do
 		q=${q%;*}
+		attr=${q#*WHERE }
+		attr=${attr/ */}
+
+		psql -d $DATABASE -c "DROP INDEX IF EXISTS idx_publ" &>/dev/null
+		pg "${2/attr/$attr}" >/dev/null
+		pg "ANALYZE publ" >/dev/null
+
 		printf '\n%s\n\n```sql%s\n```\n' "$(echo "$q" | sed -n 's/^--/##/p')" "${q##*;}"
 		pg "EXPLAIN ANALYZE ${q##*;}" | tail -n +3
+		q="$(echo "$q" | sed '/^--.*/d')"
 
-		declare -i i=${SAMPLE:=100}+1
-		IFS=';' read -ra queries <<<"$q"
-
-		start=$(date +%s%N)
-		while ((--i)); do
-			pg "${queries[i % ${#queries[@]}]};" >/dev/null
+		declare -i i=$SAMPLE+1 total=0
+		queries=()
+		while [[ $q == *';'* ]]; do
+			queries+=("${q/;*/}")
+			q=${q#*;}
 		done
-		((took = ($(date +%s%N) - start) / 1000000))
 
-		echo "**$SAMPLE runs, $((took / SAMPLE)) ms/run → $((SAMPLE * 1000 / took)) runs/s**"
+		while ((--i)); do
+			((total += $(measure "${queries[i % ${#queries[@]}]}")))
+		done
+
+		((perRun = total / SAMPLE)) # µs
+		((perS = SAMPLE * 1000000 / total))
+		echo "**$SAMPLE runs, $((perRun / 1000)).$(((perRun % 1000) / 100)) ms/run → $perS runs/s**"
 	done
 }
 
 if [[ $1 ]]; then
-	[[ $CLEAN ]] && cleanup "$1"
 	"$@"
 else
+	SAMPLE=${SAMPLE:-100}
 	run_test 'clustering B+-tree' "${IDXS[0]}"
 	run_test 'B+-tree' "${IDXS[1]}"
 	run_test 'hash' "${IDXS[2]}"
