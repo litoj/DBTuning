@@ -28,7 +28,7 @@ done <"$SRC"
 mapfile IDXS <idxs.sql
 
 measure() {
-	LANG=C pg "EXPLAIN ANALYZE $1" | sed -n 's/.* Time: \(.*\) ms/\1/p' | awk 'BEGIN{x=0};{x+=$1};END{print x*1000}'
+	LANG=C pg "EXPLAIN ANALYZE $1" | sed -n 's/.* Time: \(.*\) ms/\1/p' | awk 'BEGIN{x=0};{x+=$1};END{print int(x*1000)}'
 }
 
 mapfile STRATEGIES <./strategizer.sql
@@ -42,9 +42,7 @@ run_test() {
 
 		declare -i i=$SAMPLE+1 total=0
 		while ((--i)); do
-			measured=$(measure "$q")
-			[[ $measured == .* ]] && measured=0
-			((total += measured))
+			((total += $(measure "$q")))
 		done
 
 		((perRun = total / SAMPLE)) # µs
@@ -62,7 +60,7 @@ else
 
 	# Part 1
 	echo "# Default strategy testing"
-	pg "${STRATEGIES[0]//false/true}"
+	pg "${STRATEGIES[0]//false/true}" >/dev/null
 	for idx in "${IDXS[@]::3}"; do # first 3 lines are for default strat testing
 		pg "DROP INDEX IF EXISTS idx_publ; DROP INDEX IF EXISTS idx_auth;" &>/dev/null
 		echo "### ${idx##*-- }"
@@ -75,7 +73,7 @@ else
 	echo "# Strategy performance testing"
 	for strat in "${STRATEGIES[@]}"; do
 		echo "## ${strat##*-- }"
-		pg "$strat"
+		pg "$strat" >/dev/null
 
 		for idx in "${IDXS[@]:4}"; do # skip empty line separating part 1 indices and part 2 indices
 			pg "DROP INDEX IF EXISTS idx_publ; DROP INDEX IF EXISTS idx_auth;" &>/dev/null
