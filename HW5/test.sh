@@ -35,10 +35,10 @@ mapfile STRATEGIES <./strategizer.sql
 
 run_test() {
 	for q in "${QUERIES[@]}"; do
-		echo "$q" | sed -n 's/^--/####/p'
+		echo "$q" | sed -n 's/^--/\n####/p'
 		q="$(echo "$q" | sed '1d')"
 
-		pg "EXPLAIN ANALYZE $q" | tail -n +3
+		LANG=C pg "EXPLAIN ANALYZE $q" | tail -n +3 | head -n -2
 
 		declare -i i=$SAMPLE+1 total=0
 		while ((--i)); do
@@ -47,7 +47,7 @@ run_test() {
 
 		((perRun = total / SAMPLE)) # µs
 		((perS = SAMPLE * 1000000 / total))
-		echo "**$SAMPLE runs, $((perRun / 1000)).$(((perRun % 1000) / 100)) ms/run → $perS runs/s**"
+		echo "**$SAMPLE runs, $((perRun / 1000)).$(((perRun % 1000) / 100)) ms/run**"
 	done
 }
 
@@ -56,29 +56,18 @@ run_test() {
 if [[ $1 ]]; then
 	"$@"
 else
-	SAMPLE=${SAMPLE:-100}
+	SAMPLE=${SAMPLE:-20}
 
-	# Part 1
-	echo "# Default strategy testing"
-	pg "${STRATEGIES[0]//false/true}" >/dev/null
-	for idx in "${IDXS[@]::3}"; do # first 3 lines are for default strat testing
-		pg "DROP INDEX IF EXISTS idx_publ; DROP INDEX IF EXISTS idx_auth;" &>/dev/null
-		echo "### ${idx##*-- }"
-		pg "RESET ALL; ${idx%;*}; ANALYZE publ; ANALYZE auth;" >/dev/null
-
-		run_test
-	done
-
-	# Part 2
-	echo "# Strategy performance testing"
 	for strat in "${STRATEGIES[@]}"; do
 		echo "## ${strat##*-- }"
 		pg "$strat" >/dev/null
+		strat=${strat#*-- }
 
-		for idx in "${IDXS[@]:4}"; do # skip empty line separating part 1 indices and part 2 indices
+		for i in ${strat%--*}; do # use indexes selected in the strategy comments as a list of numbers
+			idx=${IDXS[$i]}
 			pg "DROP INDEX IF EXISTS idx_publ; DROP INDEX IF EXISTS idx_auth;" &>/dev/null
 			echo "### ${idx##*-- }"
-			[[ $strat == *'hashjoin TO true'* ]] && idx=${idx//btree/hash}
+			[[ $strat == 'SET enable_hashjoin TO true'* ]] && idx=${idx//btree/hash}
 			pg "RESET ALL; ${idx%;*}; ANALYZE publ; ANALYZE auth;" >/dev/null
 
 			run_test

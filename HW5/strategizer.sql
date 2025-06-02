@@ -1,3 +1,4 @@
-SET enable_nestloop TO true; SET enable_mergejoin TO false; SET enable_hashjoin TO false; -- Indexed nested loop
-SET enable_mergejoin TO true; SET enable_nestloop TO false; SET enable_hashjoin TO false; -- Sort-merge join
-SET enable_hashjoin TO true; SET enable_nestloop TO false; SET enable_mergejoin TO false; -- Hash join
+SET enable_nestloop TO true; SET enable_mergejoin TO true; SET enable_hashjoin TO true; -- 0 1 2 -- Default strategy
+SET enable_nestloop TO true; SET enable_mergejoin TO false; SET enable_hashjoin TO false; -- 3 4 5 -- Indexed nested loop join
+SET enable_mergejoin TO true; SET enable_nestloop TO false; SET enable_hashjoin TO false; -- 0 2 5 -- Sort-merge join
+SET enable_hashjoin TO true; SET enable_nestloop TO false; SET enable_mergejoin TO false; -- 0 -- Hash join
