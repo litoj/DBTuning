@@ -56,7 +56,7 @@ run_test() {
 if [[ $1 ]]; then
 	"$@"
 else
-	SAMPLE=${SAMPLE:-20}
+	SAMPLE=${SAMPLE:-50}
 
 	for strat in "${STRATEGIES[@]}"; do
 		echo "## ${strat##*-- }"
