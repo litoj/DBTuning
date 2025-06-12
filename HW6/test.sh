@@ -1,52 +1,66 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
 
-# Name of the database (override with DATABASE=…)
 DATABASE=${DATABASE:-payroll}
 
-# Move to the script’s directory so relative paths work
-cd "${0%/*}"
+[[ $0 == */* ]] && cd "${0%/*}"
 
-# Path to psql (if psql isn’t on your $PATH, uncomment & adjust)
-# PG_BIN="/c/Program Files/PostgreSQL/17/bin"
-# psql() { "$PG_BIN/psql.exe" "$@"; }
-
-# Ensure the DB exists; if not, create it
-ensure_db() {
-  if ! psql -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DATABASE'" | grep -q 1; then
-    echo ">>> creating database '$DATABASE'…" >&2
-    createdb "$DATABASE"
-  fi
+pg() {
+	echo "$1" >&2
+	psql -d $DATABASE -c "$@"
 }
 
-# Reset schema: drop & recreate Accounts table + load data
-reset_schema() {
-  echo ">>> resetting schema on '$DATABASE'…" >&2
-  psql -d "$DATABASE" -f create.sql
-  echo ">>> done." >&2
+QUERIES=(a b)
+STRATEGIES=("READ COMMITTED" "SERIALIZABLE")
+SAMPLE=${SAMPLE:-10}
+MAX_THREADS=${MAX_THREADS:-5}
+export EMPLOYEES=${EMPLOYEES:-100}
+
+resetSQL=$(<reset.sql)
+resetSQL="${resetSQL//100/$EMPLOYEES}"
+createSQL=$(<create.sql)
+createSQL="${createSQL//100/$EMPLOYEES}"
+cleanup() {
+	{
+		echo "Cleanup and prep started"
+		dropdb $DATABASE
+		createdb $DATABASE
+		pg "$createSQL"
+		echo "Prep done"
+	} >&2
 }
 
-# Experiment configuration
-VARIANTS=(a b)
-ISOLATIONS=("READ COMMITTED" "SERIALIZABLE")
-THREADS=(1 5)
-NUMTX=100
+run_test() {
+	for q in "${QUERIES[@]}"; do
+		export VARIANT="$q"
+		declare -i i=$SAMPLE+1 total_time=0 total_balance=0
+		while ((--i)); do
+			pg "$resetSQL" &>/dev/null
 
-# Main loop
-for var in "${VARIANTS[@]}"; do
-  for iso in "${ISOLATIONS[@]}"; do
-    for t in "${THREADS[@]}"; do
+			data=($(python concurrenttransactions.py)) # time; final balance
+			((total_time += data[0]))
+			((total_balance += data[1]))
+		done
 
-      ensure_db
-      reset_schema
+		((perRun = total_time / SAMPLE)) # avg µs
+		((avgBalance = total_balance / SAMPLE))
+		((avgBalanceErr = (EMPLOYEES - avgBalance) * 100 / EMPLOYEES))
+		echo "I=${strat}; T=${t}; V=${q}; runs=$SAMPLE: $((perRun / 1000)).$(((perRun % 1000) / 100)) ms/run, correct=${avgBalanceErr}%"
+	done
+}
 
-      echo "=== variant=$var   isolation=$iso   threads=$t ==="
-      python concurrenttransactions.py \
-        --numthreads  $NUMTX \
-        --maxconcurrent $t \
-        --variant     $var \
-        --isolation   "$iso"
-      echo
-    done
-  done
-done
+cleanup &>/dev/null
+
+if [[ $1 ]]; then
+	pg "$@"
+else
+	for strat in "${STRATEGIES[@]}"; do
+		export STRATEGY="$strat"
+		strat=${strat#* }
+		strat=${strat::6}
+		declare -i t=$MAX_THREADS+1
+		while ((--t)); do
+			export THREADS="$t"
+			run_test
+		done
+	done
+fi

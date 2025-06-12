@@ -1,10 +1,8 @@
-\c payroll
-
 DROP TABLE IF EXISTS Accounts;
 
 CREATE TABLE Accounts (
   account INT PRIMARY KEY,
-  balance BIGINT
+  balance INT
 );
 
 INSERT INTO Accounts VALUES (0,100);

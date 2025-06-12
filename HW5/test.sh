@@ -5,6 +5,7 @@ DATABASE=${DATABASE:-trdb}
 [[ $0 == */* ]] && cd "${0%/*}"
 
 pg() {
+	echo "$1" >&2
 	psql -d $DATABASE -c "$@"
 }
 
@@ -42,15 +43,17 @@ run_test() {
 
 		LANG=C pg "EXPLAIN ANALYZE $q" | tail -n +3 | head -n -2
 
-		declare -i i=$SAMPLE+1 total=0
-		while ((--i)); do
-			((total += $(measure "$q")))
-		done
+		if ((SAMPLE)); then
+			declare -i i=$SAMPLE+1 total=0
+			while ((--i)); do
+				((total += $(measure "$q")))
+			done
 
-		((perRun = total / SAMPLE)) # µs
-		((perS = SAMPLE * 1000000 / total))
-		echo "**$SAMPLE runs, $((perRun / 1000)).$(((perRun % 1000) / 100)) ms/run**
+			((perRun = total / SAMPLE)) # µs
+			((perS = SAMPLE * 1000000 / total))
+			echo "**$SAMPLE runs, $((perRun / 1000)).$(((perRun % 1000) / 100)) ms/run**
 "
+		fi
 	done
 }
 
@@ -68,7 +71,7 @@ else
 
 		for i in ${strat%--*}; do # use indexes selected in the strategy comments as a list of numbers
 			idx=${IDXS[$i]}
-			pg "DROP INDEX IF EXISTS idx_publ; DROP INDEX IF EXISTS idx_auth;" &>/dev/null
+			pg "DROP INDEX IF EXISTS idx_publ; DROP INDEX IF EXISTS idx_auth;" >/dev/null
 			echo "### ${idx##*-- }"
 			[[ $strat == 'SET enable_hashjoin TO true'* ]] && idx=${idx//btree/hash}
 			pg "RESET ALL; ${idx%;*}; ANALYZE publ; ANALYZE auth;" >/dev/null || exit 1
