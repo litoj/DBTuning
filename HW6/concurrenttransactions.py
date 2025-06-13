@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-import argparse
+import sys
 import time
 import psycopg2
 from concurrent.futures import ThreadPoolExecutor, wait
@@ -35,7 +35,14 @@ def pay_b(emp_id, conn):
 
 def transaction(i, variant, isolation):
     conn = get_conn(isolation)
-    variant(i, conn)
+    err = True
+    while err:
+        try:
+            variant(i, conn)
+            err = False
+        except Exception:
+            conn.rollback()
+            err = True
     conn.close()
 
 
