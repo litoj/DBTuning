@@ -55,11 +55,11 @@ else
 	for q in "${QUERIES[@]}"; do
 		export VARIANT="$q"
 		for strat in "${STRATEGIES[@]}"; do
+			echo
 			export STRATEGY="$strat"
 			strat=${strat#* }
 			strat=${strat::6}
-			declare -i t=$MAX_THREADS+1
-			while ((--t)); do
+			for ((t = 1; t <= MAX_THREADS; t += 1)); do
 				export THREADS="$t"
 				run_test
 			done
